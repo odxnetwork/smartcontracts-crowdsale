@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./CrowdsaleRulesNew.sol";
+import "./CrowdsaleNewRules.sol";
 import "./ODXToken.sol";
 
 /**
@@ -9,7 +9,7 @@ import "./ODXToken.sol";
  * crowdsale will run for xx days.
  * Added minimum contribution.
  */
-contract ODXCrowdsale is CrowdsaleRulesNew {
+contract ODXCrowdsale is CrowdsaleNewRules {
 
   uint256[] alockupTimes = [now + 5 minutes, now + 10 minutes, now + 15 minutes];
 
@@ -26,7 +26,7 @@ contract ODXCrowdsale is CrowdsaleRulesNew {
     public
     Crowdsale(_rate, _wallet, _token)
     CappedCrowdsale(_cap, _tokenCap)
-    CrowdsaleRulesTest(_minContribution, _goal, alockupTimes)
+    CrowdsaleNewRules(_minContribution, _goal, alockupTimes)
     TimedCrowdsale(now, now + 5 minutes)
   {
     //As goal needs to be met for a successful crowdsale

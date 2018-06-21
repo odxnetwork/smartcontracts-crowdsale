@@ -16,7 +16,7 @@ import "./SafeMath.sol";
  * 061218 - required whitelisting before accepting funds
  * 061418 - removed use of vault
  */
-contract CrowdsaleRulesTest is CappedCrowdsale, TimedCrowdsale, Ownable {
+contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, Ownable {
   using SafeMath for uint256;
 
   mapping(address => uint256) public balances;
