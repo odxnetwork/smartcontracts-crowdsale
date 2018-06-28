@@ -265,17 +265,25 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, Ownable {
       uint tokenLen = _atokenAmount.length;
       require(tokenLen == lockupTimes.length);
       
-      lockedTokens[_beneficiary] = _atokenAmount;
-      privateSale[_beneficiary] = _contributionAmount;
+      uint256 existingContribution = privateSale[_beneficiary];
+      if (existingContribution > 0){
+        updateLockedTokens(_beneficiary, _atokenAmount, _contributionAmount);
+      }else{
+        lockedTokens[_beneficiary] = _atokenAmount;
+        privateSale[_beneficiary] = _contributionAmount;
+          
+        weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.add(_contributionAmount);
+        tokensToBeMinted = tokensToBeMinted.add(getTotalTokensPerArray(_atokenAmount));
+          
+        emit AddLockedTokens(
+          _beneficiary,
+          _contributionAmount,
+          _atokenAmount
+        );
+          
+      }
       
-      weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.add(_contributionAmount);
-      tokensToBeMinted = tokensToBeMinted.add(getTotalTokensPerArray(_atokenAmount));
       
-      emit AddLockedTokens(
-      _beneficiary,
-      _contributionAmount,
-      _atokenAmount
-    );
   }
   
   function getTotalTokensPerArray(uint256[] _tokensArray) internal pure returns (uint256) {
