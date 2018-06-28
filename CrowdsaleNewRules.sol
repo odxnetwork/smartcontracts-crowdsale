@@ -37,8 +37,6 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, Ownable {
   // private sale tracker of contribution
   uint256 public weiRaisedDuringPrivateSale;
 
-  event AllocateBonusTokens(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
-  event ClearTokensAfterRefund(address indexed beneficiary, uint256 value);
   event DeliverTokens(address indexed sender, address indexed beneficiary, uint256 value);
   event AddLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
   event UpdateLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
