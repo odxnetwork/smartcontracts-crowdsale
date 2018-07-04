@@ -25,21 +25,8 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
 
   // minimum contribution
   uint256 public minContribution;
-  
-  // private sale tracker of contribution
-  uint256 public weiRaisedDuringPrivateSale;
-
 
   mapping(address => uint256) public balances;
-  
-  mapping(address => uint256[]) public lockedTokens;
-  //address[] public lockupAddresses;
-  uint256[] public lockupTimes;
-  mapping(address => uint256) public privateSale;
-  
-  mapping (address => bool) public privateSaleAgents;
-
-  
   
   event DeliverTokens(address indexed sender, address indexed beneficiary, uint256 value);
   event AddLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
@@ -47,37 +34,18 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
   event PrivateSaleAgentChanged(address addr, bool state);
 
 
-  modifier onlyPrivateSaleAgent() {
-    // crowdsale contracts or owner are allowed to whitelist address
-    if(!privateSaleAgents[msg.sender] && (msg.sender != owner)) {
-        revert();
-    }
-    _;
-  }
-  
-
   /**
    * @dev Constructor, sets goal, additionalTokenMultiplier and minContribution
    * @param _goal Funding goal
    */
-  constructor(uint256 _minContribution, uint256 _goal, uint256[] _lockupTimes) public {
+  constructor(uint256 _minContribution, uint256 _goal) public {
     require(_goal > 0);
     require(_minContribution > 0);
-    require(_lockupTimes.length > 0);
     
     goal = _goal;
     minContribution = _minContribution;
-    lockupTimes = _lockupTimes;
   }
 
-  /**
-   * Owner can add an address to the privatesaleagents.
-   */
-  function setPrivateSaleAgent(address addr, bool state) onlyOwner public {
-    whitelistAgents[addr] = state;
-    emit PrivateSaleAgentChanged(addr, state);
-  }
-  
   /**
    * @dev Adds single address to whitelist.
    * @param _beneficiary Address to be added to the whitelist
@@ -161,7 +129,7 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
    * @return Whether funding goal was reached
    */
   function goalReached() public view returns (bool) {
-    return (weiRaised + weiRaisedDuringPrivateSale) >= goal;
+    return weiRaised >= goal;
   }
 
   /**
@@ -175,168 +143,5 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
     require(tokensToBeMinted.add(_tokensToBeMinted) <= tokenCap);
     super._preValidatePurchase(_beneficiary, _weiAmount, _tokensToBeMinted);
   }
-
-
-  /**
-  * FOR THE PRIVATE SALE LOCKUP
-  **/
-
-
-  /**
-   * @dev claim locked tokens only after lockup time.
-   */
-   
-  function claimLockedTokens() public {
-    require(hasClosed());
-    require(goalReached());
-    
-    for (uint i=0; i<lockupTimes.length; i++) {
-        uint256 lockupTime = lockupTimes[i];
-        if (lockupTime < now){
-            uint256 tokens = lockedTokens[msg.sender][i];
-            if (tokens>0){
-                lockedTokens[msg.sender][i] = 0;
-                _deliverTokens(msg.sender, tokens);    
-            }
-        }
-    }
-  }
-
-
-  /**
-   * @dev release locked tokens only after lockup time.
-   */
-  function releaseLockedTokensByIndex(address _beneficiary, uint _lockedTimeIndex) onlyOwner public {
-    require(hasClosed());
-    require(goalReached());
-    require(lockupTimes[_lockedTimeIndex] < now);
-    uint256 tokens = lockedTokens[_beneficiary][_lockedTimeIndex];
-    if (tokens>0){
-        lockedTokens[_beneficiary][_lockedTimeIndex] = 0;
-        _deliverTokens(_beneficiary, tokens);    
-    }
-  }
-  
-  
-  function releaseLockedTokens(address _beneficiary) onlyOwner public {
-    require(hasClosed());
-    require(goalReached());
-    
-    for (uint i=0; i<lockupTimes.length; i++) {
-        uint256 lockupTime = lockupTimes[i];
-        if (lockupTime < now){
-            uint256 tokens = lockedTokens[_beneficiary][i];
-            if (tokens>0){
-                lockedTokens[_beneficiary][i] = 0;
-                _deliverTokens(_beneficiary, tokens);    
-            }
-        }
-    }
-    
-  }
-  
-  function tokensReadyForRelease(uint releaseBatch) public view returns (bool) {
-      bool forRelease = false;
-      uint256 lockupTime = lockupTimes[releaseBatch];
-      if (lockupTime < now){
-        forRelease = true;
-      }
-      return forRelease;
-  }
-
-  /**
-   * @dev Returns the locked tokens of a specific user.
-   * @param _beneficiary Address whose locked tokens is to be checked
-   * @return locked tokens for individual user
-   */
-  function getTotalLockedTokensPerUser(address _beneficiary) public view returns (uint256) {
-    uint256 totalTokens = 0;
-    uint256[] memory lTokens = lockedTokens[_beneficiary];
-    for (uint i=0; i<lockupTimes.length; i++) {
-        totalTokens += lTokens[i];
-    }
-    return totalTokens;
-  }
-  
-  function getLockedTokensPerUser(address _beneficiary) public view returns (uint256[]) {
-    return lockedTokens[_beneficiary];
-  }
-
-  /**
-   * LOCKUP - PRIVATE SALE
-   * /
-   
-  /**
-   * @dev Add locked tokens per user for private sale.
-   * @param _beneficiary Token purchaser
-   * @param _atokenAmount Amount of tokens purchased
-   */
-  function addPrivateSaleWithMonthlyLockup(address _beneficiary, uint256[] _atokenAmount, uint256 _contributionAmount) onlyOwner onlyWhileOpen public {
-      require(_beneficiary != address(0));
-      require(_contributionAmount > 0);
-      uint tokenLen = _atokenAmount.length;
-      require(tokenLen == lockupTimes.length);
-      
-      uint256 existingContribution = privateSale[_beneficiary];
-      if (existingContribution > 0){
-        updateLockedTokens(_beneficiary, _atokenAmount, _contributionAmount);
-      }else{
-        lockedTokens[_beneficiary] = _atokenAmount;
-        privateSale[_beneficiary] = _contributionAmount;
-          
-        weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.add(_contributionAmount);
-        tokensToBeMinted = tokensToBeMinted.add(getTotalTokensPerArray(_atokenAmount));
-          
-        emit AddLockedTokens(
-          _beneficiary,
-          _contributionAmount,
-          _atokenAmount
-        );
-          
-      }
-      
-      
-  }
-  
-  function getTotalTokensPerArray(uint256[] _tokensArray) internal pure returns (uint256) {
-      uint256 totalTokensPerArray = 0;
-      for (uint i=0; i<_tokensArray.length; i++) {
-        totalTokensPerArray += _tokensArray[i];
-      }
-      return totalTokensPerArray;
-  }
-
-
-  function updateLockedTokens(address _beneficiary, uint256[] _atokenAmount, uint256 _contributionAmount) onlyOwner onlyWhileOpen public {
-      require(_beneficiary != address(0));
-      require(_contributionAmount > 0);
-      uint tokenLen = _atokenAmount.length;
-      require(tokenLen > 0);
-      require(tokenLen == lockupTimes.length);
-      
-      //subtract to tokenstobeminted
-      tokensToBeMinted = tokensToBeMinted.sub(getTotalTokensPerArray(lockedTokens[_beneficiary]));
-      
-      lockedTokens[_beneficiary] = _atokenAmount;
-      
-      //add to tokenstobeminted
-      tokensToBeMinted = tokensToBeMinted.add(getTotalTokensPerArray(_atokenAmount));
-      
-      //subtract old contribution
-      uint256 oldContributions = privateSale[_beneficiary];
-      weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.sub(oldContributions);
-      
-      //add new contribution
-      privateSale[_beneficiary] = _contributionAmount;
-      weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.add(_contributionAmount);
-      
-      
-      emit UpdateLockedTokens(
-      _beneficiary,
-      _contributionAmount,
-      _atokenAmount
-    );
-  }
-
 
 }
