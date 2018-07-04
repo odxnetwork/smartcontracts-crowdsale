@@ -4,10 +4,10 @@ import "./PrivateSaleRules.sol";
 import "./ODXToken.sol";
 
 /**
- * @title ODXPrivateSaleCrowdsale
+ * @title ODXPrivateSale
  * @dev This is for the private sale of ODX.  
  */
-contract ODXPrivateSaleCrowdsale is PrivateSaleRules {
+contract ODXPrivateSale is PrivateSaleRules {
 
   uint256[] alockupTimes = [now + 10 minutes, now + 15 minutes, now + 20 minutes];
   
