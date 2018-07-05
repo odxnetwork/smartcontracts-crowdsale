@@ -195,7 +195,9 @@ contract PrivateSaleRules is Ownable {
       
       //subtract old contribution
       uint256 oldContributions = privateSale[_beneficiary];
-      weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.sub(oldContributions);
+      if (oldContributions>0) {
+        weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.sub(oldContributions);
+      }
       
       //add new contribution
       privateSale[_beneficiary] = _contributionAmount;
