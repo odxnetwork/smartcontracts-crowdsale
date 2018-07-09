@@ -25,7 +25,7 @@ contract PrivateSaleRules is Ownable {
   // The token being sold
   ERC20 public token;
 
-  event AddLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
+  //event AddLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
   event UpdateLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
   event PrivateSaleAgentChanged(address addr, bool state);
 
