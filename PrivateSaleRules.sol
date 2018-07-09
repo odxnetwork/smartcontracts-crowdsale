@@ -184,7 +184,7 @@ contract PrivateSaleRules is Ownable {
    * @param _atokenAmount Amount of tokens to be minted
    * @param _contributionAmount ETH equivalent of the contribution
    */
-  function updatePrivateSaleWithMonthlyLockup(address _beneficiary, uint256[] _atokenAmount, uint256 _contributionAmount) onlyOwner public {
+  function updatePrivateSaleWithMonthlyLockup(address _beneficiary, uint256[] _atokenAmount, uint256 _contributionAmount) onlyPrivateSaleAgent public {
       require(_beneficiary != address(0));
       require(_contributionAmount > 0);
       uint tokenLen = _atokenAmount.length;
