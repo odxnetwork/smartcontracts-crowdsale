@@ -16,6 +16,7 @@ import "./SafeMath.sol";
  * 061118 - removed presale
  * 061218 - required whitelisting before accepting funds
  * 061418 - removed use of vault
+ * 080118 - removed unused events 
  */
 contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowdsale {
   using SafeMath for uint256;
@@ -29,9 +30,8 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
   mapping(address => uint256) public balances;
   
   event DeliverTokens(address indexed sender, address indexed beneficiary, uint256 value);
-  event AddLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
-  event UpdateLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
-  event PrivateSaleAgentChanged(address addr, bool state);
+  event UpdateRate(address indexed sender, uint256 rate);
+  
 
 
   /**
@@ -117,5 +117,21 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
     require(tokensToBeMinted.add(_tokensToBeMinted) <= tokenCap);
     super._preValidatePurchase(_beneficiary, _weiAmount, _tokensToBeMinted);
   }
+
+
+  /**
+   * @dev change rate value
+   * @param _newrate new token conversion rate
+   */
+  function updateRate(uint256 _newrate) external onlyOwner {
+    require(_newrate > 0);
+    rate = _newrate;
+    
+    emit UpdateRate(
+        msg.sender,
+        _newrate
+    );
+  }
+
 
 }
