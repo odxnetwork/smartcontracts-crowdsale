@@ -1,9 +1,9 @@
 pragma solidity ^0.4.23;
 
-import "./ODXToken.sol";
-import "./Ownable.sol";
-import "./ERC20.sol";
-import "./SafeMath.sol";
+import "../../token/contracts/ODXToken.sol";
+import "../../token/contracts/Ownable.sol";
+import "../../token/contracts/ERC20.sol";
+import "../../token/contracts/SafeMath.sol";
 
 /**
  * @title PrivateSaleRules
@@ -25,8 +25,8 @@ contract PrivateSaleRules is Ownable {
   // The token being sold
   ERC20 public token;
 
-  //event AddLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
-  event UpdateLockedTokens(address indexed beneficiary, uint256 value, uint256[] amount);
+  event AddLockedTokens(address indexed beneficiary, uint256 totalContributionAmount, uint256[] tokenAmount);
+  event UpdateLockedTokens(address indexed beneficiary, uint256 totalContributionAmount, uint lockedTimeIndex, uint256 tokenAmount);
   event PrivateSaleAgentChanged(address addr, bool state);
 
 
@@ -141,33 +141,31 @@ contract PrivateSaleRules is Ownable {
     return lockedTokens[_beneficiary];
   }
 
-   /*
-  function addPrivateSaleWithMonthlyLockup(address _beneficiary, uint256[] _atokenAmount, uint256 _contributionAmount) onlyOwner public {
+  function addPrivateSaleWithMonthlyLockup(address _beneficiary, uint256[] _atokenAmount, uint256 _totalContributionAmount) onlyPrivateSaleAgent public {
       require(_beneficiary != address(0));
-      require(_contributionAmount > 0);
+      require(_totalContributionAmount > 0);
       uint tokenLen = _atokenAmount.length;
       require(tokenLen == lockupTimes.length);
       
       uint256 existingContribution = privateSale[_beneficiary];
       if (existingContribution > 0){
-        updateLockedTokens(_beneficiary, _atokenAmount, _contributionAmount);
+        revert();
+        //updateLockedTokens(_beneficiary, _atokenAmount, _totalContributionAmount);
       }else{
         lockedTokens[_beneficiary] = _atokenAmount;
-        privateSale[_beneficiary] = _contributionAmount;
+        privateSale[_beneficiary] = _totalContributionAmount;
           
-        weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.add(_contributionAmount);
+        weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.add(_totalContributionAmount);
           
         emit AddLockedTokens(
           _beneficiary,
-          _contributionAmount,
+          _totalContributionAmount,
           _atokenAmount
         );
           
       }
       
-      
   }
-  */
   
   function getTotalTokensPerArray(uint256[] _tokensArray) internal pure returns (uint256) {
       uint256 totalTokensPerArray = 0;
@@ -181,32 +179,37 @@ contract PrivateSaleRules is Ownable {
   /**
    * @dev update locked tokens per user 
    * @param _beneficiary Token purchaser
+   * @param _lockedTimeIndex lockupTimes index
    * @param _atokenAmount Amount of tokens to be minted
-   * @param _contributionAmount ETH equivalent of the contribution
+   * @param _totalContributionAmount ETH equivalent of the contribution
    */
-  function updatePrivateSaleWithMonthlyLockup(address _beneficiary, uint256[] _atokenAmount, uint256 _contributionAmount) onlyPrivateSaleAgent public {
+  function updatePrivateSaleWithMonthlyLockupByIndex(address _beneficiary, uint _lockedTimeIndex, uint256 _atokenAmount, uint256 _totalContributionAmount) onlyPrivateSaleAgent public {
       require(_beneficiary != address(0));
-      require(_contributionAmount > 0);
-      uint tokenLen = _atokenAmount.length;
-      require(tokenLen > 0);
-      require(tokenLen == lockupTimes.length);
+      require(_totalContributionAmount > 0);
+      uint tokenLen = lockupTimes.length;
+      //_lockedTimeIndex must be valid within the lockuptimes length
+      require(_lockedTimeIndex < tokenLen);
       
-      lockedTokens[_beneficiary] = _atokenAmount;
-      
-      //subtract old contribution
       uint256 oldContributions = privateSale[_beneficiary];
-      if (oldContributions>0) {
-        weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.sub(oldContributions);
-      }
+      //make sure beneficiary has existing contribution otherwise use addPrivateSaleWithMonthlyLockup
+      require(oldContributions > 0);
+
+      //make sure lockuptime of the index is less than now (tokens were not yet released)
+      require(!tokensReadyForRelease(_lockedTimeIndex));
       
-      //add new contribution
-      privateSale[_beneficiary] = _contributionAmount;
-      weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.add(_contributionAmount);
+      lockedTokens[_beneficiary][_lockedTimeIndex] = _atokenAmount;
       
+      //subtract old contribution from weiRaisedDuringPrivateSale
+      weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.sub(oldContributions);
       
+      //add new contribution to weiRaisedDuringPrivateSale
+      privateSale[_beneficiary] = _totalContributionAmount;
+      weiRaisedDuringPrivateSale = weiRaisedDuringPrivateSale.add(_totalContributionAmount);
+            
       emit UpdateLockedTokens(
       _beneficiary,
-      _contributionAmount,
+      _totalContributionAmount,
+      _lockedTimeIndex,
       _atokenAmount
     );
   }
