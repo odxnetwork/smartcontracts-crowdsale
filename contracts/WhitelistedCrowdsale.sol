@@ -17,7 +17,8 @@ contract WhitelistedCrowdsale is Crowdsale, Ownable {
   mapping (address => bool) public whitelistAgents;
   
   event WhitelistAgentChanged(address addr, bool state);
-  
+  event AddToWhitelist(address addr, bool state);
+  event RemoveFromWhitelist(address addr, bool state);
   
   modifier onlyWhitelistAgent() {
     // crowdsale contracts or owner are allowed to whitelist address
@@ -50,6 +51,7 @@ contract WhitelistedCrowdsale is Crowdsale, Ownable {
    */
   function addToWhitelist(address _beneficiary) external onlyWhitelistAgent {
     whitelist[_beneficiary] = true;
+    emit AddToWhitelist(_beneficiary, true);
   }
 
   /**
@@ -59,6 +61,7 @@ contract WhitelistedCrowdsale is Crowdsale, Ownable {
   function addManyToWhitelist(address[] _beneficiaries) external onlyWhitelistAgent {
     for (uint256 i = 0; i < _beneficiaries.length; i++) {
       whitelist[_beneficiaries[i]] = true;
+      emit AddToWhitelist(_beneficiaries[i], true);
     }
   }
 
@@ -68,6 +71,7 @@ contract WhitelistedCrowdsale is Crowdsale, Ownable {
    */
   function removeFromWhitelist(address _beneficiary) external onlyWhitelistAgent {
     whitelist[_beneficiary] = false;
+    emit RemoveFromWhitelist(_beneficiary, true);
   }
 
 }
