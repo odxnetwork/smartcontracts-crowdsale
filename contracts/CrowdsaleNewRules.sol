@@ -3,6 +3,8 @@ pragma solidity ^0.4.23;
 import "./TimedCrowdsale.sol";
 import "./CappedCrowdsale.sol";
 import "./WhitelistedCrowdsale.sol";
+import "./CrowdsaleFromOtherSource.sol";
+import "./ETHRateAgents.sol";
 import "./ODXToken.sol";
 import "./Ownable.sol";
 import "./ERC20.sol";
@@ -17,8 +19,10 @@ import "./SafeMath.sol";
  * 061218 - required whitelisting before accepting funds
  * 061418 - removed use of vault
  * 080118 - removed unused events 
+ * 100518 - removed capping of weiraised.  Added CrowdsaleFromOtherSource
+ * 102318 - added agents for update rate.
  */
-contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowdsale {
+contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowdsale, CrowdsaleFromOtherSource, ETHRateAgents {
   using SafeMath for uint256;
 
   // minimum amount of funds to be raised in weis
@@ -32,6 +36,7 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
   event DeliverTokens(address indexed sender, address indexed beneficiary, uint256 value);
   event UpdateRate(address indexed sender, uint256 rate);
   
+  event AllocateTokensFromOtherSource(bytes32 indexed coinType, address indexed beneficiary, uint256 value, uint256 amount);
 
 
   /**
@@ -113,7 +118,7 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
    */
   function _preValidatePurchase(address _beneficiary, uint256 _weiAmount, uint256 _tokensToBeMinted) internal onlyWhileOpen isWhitelisted(_beneficiary) {
     require(_weiAmount >= minContribution);
-    require(weiRaised.add(_weiAmount) <= cap);
+    //require(weiRaised.add(_weiAmount) <= cap);
     require(tokensToBeMinted.add(_tokensToBeMinted) <= tokenCap);
     super._preValidatePurchase(_beneficiary, _weiAmount, _tokensToBeMinted);
   }
@@ -123,7 +128,7 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
    * @dev change rate value
    * @param _newrate new token conversion rate
    */
-  function updateRate(uint256 _newrate) external onlyOwner {
+  function updateRate(uint256 _newrate) external onlyETHRateAgent() {
     require(_newrate > 0);
     rate = _newrate;
     
@@ -131,6 +136,25 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
         msg.sender,
         _newrate
     );
+  }
+
+
+  /**
+   * @dev Extend parent behavior requiring to be within contributing period
+   * @param _beneficiary Token purchaser
+   * @param _tokensToBeMinted tokens to be minted
+   */
+  function addPurchaseFromOtherSource(address _beneficiary, bytes32 _coinType, uint256 _amount, uint256 _tokensToBeMinted) internal onlyWhileOpen isWhitelisted(_beneficiary) onlyAllowedAgentForOtherSource() {
+    require(_amount >= 0);
+    require(_tokensToBeMinted >= 0);
+    require(otherSourceExists(_coinType));
+    require(tokensToBeMinted.add(_tokensToBeMinted) <= tokenCap);
+    
+    tokensToBeMinted = tokensToBeMinted.add(_tokensToBeMinted);
+    balances[_beneficiary] = balances[_beneficiary].add(_tokensToBeMinted);
+    emit AllocateTokensFromOtherSource(_coinType, _beneficiary, _amount, _tokensToBeMinted);
+    raisedAmount[_coinType] = raisedAmount[_coinType] + _amount;
+    
   }
 
 

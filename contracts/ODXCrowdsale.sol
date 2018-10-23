@@ -19,13 +19,15 @@ contract ODXCrowdsale is CrowdsaleNewRules {
     ODXToken _token,
     uint256 _goal,
     uint256 _minContribution,
-    uint256 _openingTime
+    uint256 _openingTime,
+    bytes32[] _allowedOTherSource
   )
     public
     Crowdsale(_rate, _wallet, _token)
     CappedCrowdsale(_cap, _tokenCap)
     CrowdsaleNewRules(_minContribution, _goal)
     TimedCrowdsale(_openingTime, now + 30 days)
+    CrowdsaleFromOtherSource(_allowedOTherSource)
   {
     //As goal needs to be met for a successful crowdsale
     //the value needs to less or equal than a cap which is limit for accepted funds
