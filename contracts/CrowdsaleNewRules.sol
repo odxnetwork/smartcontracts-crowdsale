@@ -21,12 +21,13 @@ import "./SafeMath.sol";
  * 080118 - removed unused events 
  * 100518 - removed capping of weiraised.  Added CrowdsaleFromOtherSource
  * 102318 - added agents for update rate.
+ * 102518 - removed goal checking
  */
 contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowdsale, CrowdsaleFromOtherSource, ETHRateAgents {
   using SafeMath for uint256;
 
   // minimum amount of funds to be raised in weis
-  uint256 public goal;
+  //uint256 public goal;
 
   // minimum contribution
   uint256 public minContribution;
@@ -41,13 +42,10 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
 
   /**
    * @dev Constructor, sets goal, additionalTokenMultiplier and minContribution
-   * @param _goal Funding goal
+   * @param _minContribution : minimum contribution
    */
-  constructor(uint256 _minContribution, uint256 _goal) public {
-    require(_goal > 0);
+  constructor(uint256 _minContribution) public {
     require(_minContribution > 0);
-    
-    goal = _goal;
     minContribution = _minContribution;
   }
 
@@ -70,7 +68,6 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
    */
   function _sendTokens(address _beneficiary) internal {
     require(hasClosed());
-    require(goalReached());
     uint256 amount = balances[_beneficiary];
     require(amount > 0);
     balances[_beneficiary] = 0;
@@ -103,14 +100,6 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
     //require(MintableToken(token).mint(wallet, _tokenAmount));
   }
   
-  /**
-   * @dev Checks whether funding goal was reached.
-   * @return Whether funding goal was reached
-   */
-  function goalReached() public view returns (bool) {
-    return weiRaised >= goal;
-  }
-
   /**
    * @dev Extend parent behavior requiring to be within contributing period
    * @param _beneficiary Token purchaser

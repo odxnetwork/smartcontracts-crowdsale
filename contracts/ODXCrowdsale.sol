@@ -10,28 +10,23 @@ import "./ODXToken.sol";
  * Added minimum contribution.
  */
 contract ODXCrowdsale is CrowdsaleNewRules {
-
   constructor(
     uint256 _rate,
     address _wallet,
     uint256 _cap,
     uint256 _tokenCap,
     ODXToken _token,
-    uint256 _goal,
     uint256 _minContribution,
-    uint256 _openingTime,
-    bytes32[] _allowedOTherSource
+    uint256 _openingTime
   )
     public
     Crowdsale(_rate, _wallet, _token)
     CappedCrowdsale(_cap, _tokenCap)
-    CrowdsaleNewRules(_minContribution, _goal)
-    TimedCrowdsale(_openingTime, now + 30 days)
-    CrowdsaleFromOtherSource(_allowedOTherSource)
+    CrowdsaleNewRules(_minContribution)
+    TimedCrowdsale(_openingTime, now + 1 hours)
+    //TimedCrowdsale(now, now + 1 hours)
+    CrowdsaleFromOtherSource()
   {
-    //As goal needs to be met for a successful crowdsale
-    //the value needs to less or equal than a cap which is limit for accepted funds
-    require(_goal <= _cap);
     require(_rate > 0);
   }
   
