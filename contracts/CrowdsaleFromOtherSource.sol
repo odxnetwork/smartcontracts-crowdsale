@@ -14,13 +14,9 @@ contract CrowdsaleFromOtherSource is Crowdsale, Ownable {
 
   mapping (address => bool) public allowedAgentsForOtherSource;
   
-  mapping(bytes32 => uint256) public raisedAmount;
-  
-  bytes32[] public allowedOtherSource;
+  mapping(string => uint256) raisedAmount;
   
   event AllowedAgentsForOtherSourceChanged(address addr, bool state);
-  event AddAllowedOtherSource(bytes32 otherSource);
-  event RemoveAllowedOtherSource(bytes32 otherSource);
   
   modifier onlyAllowedAgentForOtherSource() {
     // crowdsale contracts or owner are allowed to whitelist address
@@ -30,12 +26,7 @@ contract CrowdsaleFromOtherSource is Crowdsale, Ownable {
     _;
   }
   
-  /**
-   * @dev Constructor, takes the initial allowed other source/coins.
-   * @param _allowedOtherSource initial other source/coins allowed
-   */
-  constructor(bytes32[] _allowedOtherSource) public {
-    allowedOtherSource = _allowedOtherSource;
+  constructor() public {
   }
   
   /**
@@ -46,39 +37,13 @@ contract CrowdsaleFromOtherSource is Crowdsale, Ownable {
     emit AllowedAgentsForOtherSourceChanged(addr, state);
   }
   
-  function otherSourceExists(bytes32 _newOtherSource) internal view returns (bool) {
-    for (uint i=0; i<allowedOtherSource.length; i++) {
-        if (allowedOtherSource[i] == _newOtherSource){
-            return true;
-        }
-    }
+  function validOtherSource(string _newOtherSource) internal view returns (bool) {
+    if (keccak256(_newOtherSource)==keccak256("BTC") || keccak256(_newOtherSource)==keccak256("LTC")) return true;
     return false;
   }
   
+  function getRaisedAmount(string source) public view returns (uint256){
+      return raisedAmount[source];
+  }
   
-  /**
-   * @dev Adds single address to whitelist.
-   * @param _newOtherSource other source to be added
-   */
-  function addAllowedOtherSource(bytes32 _newOtherSource) external onlyAllowedAgentForOtherSource {
-    require(!otherSourceExists(_newOtherSource));
-    allowedOtherSource.push(_newOtherSource);
-    emit AddAllowedOtherSource(_newOtherSource);
-  }
-
-
-  /**
-   * @dev Removes single address from whitelist.
-   * @param _otherSource other source to be removed
-   */
-  function removeAllowedOtherSource(bytes32 _otherSource) external onlyAllowedAgentForOtherSource {
-    for (uint i=0; i<allowedOtherSource.length; i++) {
-        if (allowedOtherSource[i] == _otherSource){
-            allowedOtherSource[i] = allowedOtherSource[allowedOtherSource.length];
-            allowedOtherSource.length--;
-            emit RemoveAllowedOtherSource(_otherSource);
-        }
-    }
-  }
-
 }

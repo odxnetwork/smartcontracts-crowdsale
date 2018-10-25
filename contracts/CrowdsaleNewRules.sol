@@ -36,7 +36,7 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
   event DeliverTokens(address indexed sender, address indexed beneficiary, uint256 value);
   event UpdateRate(address indexed sender, uint256 rate);
   
-  event AllocateTokensFromOtherSource(bytes32 indexed coinType, address indexed beneficiary, uint256 value, uint256 amount);
+  event AllocateTokensFromOtherSource(string indexed coinType, address indexed beneficiary, uint256 value, uint256 amount);
 
 
   /**
@@ -144,10 +144,10 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
    * @param _beneficiary Token purchaser
    * @param _tokensToBeMinted tokens to be minted
    */
-  function addPurchaseFromOtherSource(address _beneficiary, bytes32 _coinType, uint256 _amount, uint256 _tokensToBeMinted) internal onlyWhileOpen isWhitelisted(_beneficiary) onlyAllowedAgentForOtherSource() {
+  function addPurchaseFromOtherSource(address _beneficiary, string _coinType, uint256 _amount, uint256 _tokensToBeMinted) public onlyWhileOpen isWhitelisted(_beneficiary) onlyAllowedAgentForOtherSource() {
     require(_amount >= 0);
     require(_tokensToBeMinted >= 0);
-    require(otherSourceExists(_coinType));
+    require(validOtherSource(_coinType));
     require(tokensToBeMinted.add(_tokensToBeMinted) <= tokenCap);
     
     tokensToBeMinted = tokensToBeMinted.add(_tokensToBeMinted);
