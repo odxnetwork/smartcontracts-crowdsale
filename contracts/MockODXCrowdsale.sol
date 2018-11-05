@@ -14,12 +14,11 @@ contract MockODXCrowdsale is ODXCrowdsale {
     uint256 _cap,
     uint256 _tokenCap,
     ODXToken _token,
-    uint256 _goal,
     uint256 _minContribution,
     uint256 _openingTime
   )
     public
-    ODXCrowdsale(_rate, _wallet, _cap, _tokenCap, _token, _goal, _minContribution, _openingTime)
+    ODXCrowdsale(_rate, _wallet, _cap, _tokenCap, _token, _minContribution, _openingTime)
   {
   }
-}
+}	
