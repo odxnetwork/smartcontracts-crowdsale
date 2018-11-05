@@ -35,7 +35,6 @@ contract('MockODXCrowdsale', function(accounts) {
         1000000000000000000,
         50000000000000000000000,
         this.token.address,
-        goal,
         100000000000000000,
         startTime, 
         { from: owner }
@@ -156,12 +155,7 @@ contract('MockODXCrowdsale', function(accounts) {
             const tokenReceived = await this.token.balanceOf(whitelistedInvestor);
             tokenAllocated.should.be.bignumber.equal(tokenReceived);
         });
-        it('should not allow whitelisted beneficiaries to withdraw tokens after crowdsale if goal is not reached', async function () {
-          await this.crowdsale.buyTokens(whitelistedInvestor, { value: valueLessGoal, from: whitelistedInvestor });
-          const tokenAllocated = await this.crowdsale.balances(whitelistedInvestor);
-          await this.crowdsale.turnBackTime(days30+1);
-          await this.crowdsale.withdrawTokensByInvestors({ from: whitelistedInvestor }).should.be.rejected;
-      });
+        
         it('should log token distribution', async function () {
           await this.crowdsale.buyTokens(whitelistedInvestor, { value: value, from: whitelistedInvestor });
           const tokenAllocated = await this.crowdsale.balances(whitelistedInvestor);

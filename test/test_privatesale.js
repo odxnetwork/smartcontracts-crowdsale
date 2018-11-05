@@ -218,7 +218,6 @@ contract('MockODXPrivatesale', function(accounts) {
     });
 
   });
-
   
   describe('transferOwnership', function () {
     it("should only allow owner to transfer ownership", async function() {
