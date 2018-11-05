@@ -26,9 +26,6 @@ import "./SafeMath.sol";
 contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowdsale, CrowdsaleFromOtherSource, ETHRateAgents {
   using SafeMath for uint256;
 
-  // minimum amount of funds to be raised in weis
-  //uint256 public goal;
-
   // minimum contribution
   uint256 public minContribution;
 
@@ -97,7 +94,6 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
   function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
     require(ODXToken(token).mint(_beneficiary, _tokenAmount));
     tokensToBeMinted = tokensToBeMinted.sub(_tokenAmount);
-    //require(MintableToken(token).mint(wallet, _tokenAmount));
   }
   
   /**
@@ -107,7 +103,6 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
    */
   function _preValidatePurchase(address _beneficiary, uint256 _weiAmount, uint256 _tokensToBeMinted) internal onlyWhileOpen isWhitelisted(_beneficiary) {
     require(_weiAmount >= minContribution);
-    //require(weiRaised.add(_weiAmount) <= cap);
     require(tokensToBeMinted.add(_tokensToBeMinted) <= tokenCap);
     super._preValidatePurchase(_beneficiary, _weiAmount, _tokensToBeMinted);
   }

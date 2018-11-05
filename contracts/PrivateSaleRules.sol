@@ -26,21 +26,19 @@ contract PrivateSaleRules is Ownable {
   ERC20 public token;
 
   event AddLockedTokens(address indexed beneficiary, uint256 totalContributionAmount, uint256[] tokenAmount);
-  event UpdateLockedTokens(address indexed beneficiary, uint256 totalContributionAmount, uint lockedTimeIndex, uint256 tokenAmount);
+  event UpdateLockedTokens(address indexed beneficiary, uint256 totalContributionAmount, uint256 lockedTimeIndex, uint256 tokenAmount);
   event PrivateSaleAgentChanged(address addr, bool state);
 
 
   modifier onlyPrivateSaleAgent() {
     // crowdsale contracts or owner are allowed to whitelist address
-    if(!privateSaleAgents[msg.sender] && (msg.sender != owner)) {
-        revert();
-    }
+    require(privateSaleAgents[msg.sender] || msg.sender == owner);
     _;
   }
   
 
   /**
-   * @dev Constructor, sets goal, additionalTokenMultiplier and minContribution
+   * @dev Constructor, sets lockupTimes and token address
    * @param _lockupTimes arraylist of lockup times
    * @param _token tokens to be minted
    */
@@ -66,7 +64,6 @@ contract PrivateSaleRules is Ownable {
    */
   function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
     require(ODXToken(token).mint(_beneficiary, _tokenAmount));
-    //require(MintableToken(token).mint(wallet, _tokenAmount));
   }
   
   /**
@@ -90,7 +87,7 @@ contract PrivateSaleRules is Ownable {
   /**
    * @dev release locked tokens only after lockup time.
    */
-  function releaseLockedTokensByIndex(address _beneficiary, uint _lockedTimeIndex) onlyOwner public {
+  function releaseLockedTokensByIndex(address _beneficiary, uint256 _lockedTimeIndex) onlyOwner public {
     require(lockupTimes[_lockedTimeIndex] < now);
     uint256 tokens = lockedTokens[_beneficiary][_lockedTimeIndex];
     if (tokens>0){
@@ -114,7 +111,7 @@ contract PrivateSaleRules is Ownable {
     
   }
   
-  function tokensReadyForRelease(uint releaseBatch) public view returns (bool) {
+  function tokensReadyForRelease(uint256 releaseBatch) public view returns (bool) {
       bool forRelease = false;
       uint256 lockupTime = lockupTimes[releaseBatch];
       if (lockupTime < now){
@@ -144,13 +141,11 @@ contract PrivateSaleRules is Ownable {
   function addPrivateSaleWithMonthlyLockup(address _beneficiary, uint256[] _atokenAmount, uint256 _totalContributionAmount) onlyPrivateSaleAgent public {
       require(_beneficiary != address(0));
       require(_totalContributionAmount > 0);
-      uint tokenLen = _atokenAmount.length;
-      require(tokenLen == lockupTimes.length);
+      require(_atokenAmount.length == lockupTimes.length);
       
       uint256 existingContribution = privateSale[_beneficiary];
       if (existingContribution > 0){
         revert();
-        //updateLockedTokens(_beneficiary, _atokenAmount, _totalContributionAmount);
       }else{
         lockedTokens[_beneficiary] = _atokenAmount;
         privateSale[_beneficiary] = _totalContributionAmount;
@@ -167,6 +162,7 @@ contract PrivateSaleRules is Ownable {
       
   }
   
+  /*
   function getTotalTokensPerArray(uint256[] _tokensArray) internal pure returns (uint256) {
       uint256 totalTokensPerArray = 0;
       for (uint i=0; i<_tokensArray.length; i++) {
@@ -174,6 +170,7 @@ contract PrivateSaleRules is Ownable {
       }
       return totalTokensPerArray;
   }
+  */
 
 
   /**
@@ -186,9 +183,9 @@ contract PrivateSaleRules is Ownable {
   function updatePrivateSaleWithMonthlyLockupByIndex(address _beneficiary, uint _lockedTimeIndex, uint256 _atokenAmount, uint256 _totalContributionAmount) onlyPrivateSaleAgent public {
       require(_beneficiary != address(0));
       require(_totalContributionAmount > 0);
-      uint tokenLen = lockupTimes.length;
       //_lockedTimeIndex must be valid within the lockuptimes length
-      require(_lockedTimeIndex < tokenLen);
+      require(_lockedTimeIndex < lockupTimes.length);
+
       
       uint256 oldContributions = privateSale[_beneficiary];
       //make sure beneficiary has existing contribution otherwise use addPrivateSaleWithMonthlyLockup
