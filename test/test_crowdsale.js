@@ -15,10 +15,11 @@ contract('MockODXCrowdsale', function(accounts) {
   const otherInvestor = accounts[2];
   const anotherInvestor = accounts[3];
   const whitelistAgentAddress = accounts[4];
-  const goal = 500000000000000000;
+  const ETHRateAgent = accounts[5];
   const value = 1000000000000000000;
-  const valueLessGoal = 300000000000000000;
   const lessMinValue = 10000000000000000;
+  const lessThanTokenCap = 10000000000000000000000;
+  const moreThanTokenCap = 60000000000000000000000;
   const rate = 50000;
   const newRate = 1000;
   const one_eth = web3.toWei(1, 'ether');
@@ -113,15 +114,52 @@ contract('MockODXCrowdsale', function(accounts) {
     });
 
     describe('update rate', function () {
-      it('should reject request if sender is not the owner', async function () {
-          await this.crowdsale.updateRate(newRate, { from: otherInvestor }).should.be.rejected;
+      it('should only allow owner to set ETHRateAgent', async function () {
+        await this.crowdsale.setETHRateAgent(ETHRateAgent, true, { from: owner }).should.be.fulfilled;
+        await this.crowdsale.setETHRateAgent(ETHRateAgent, true, { from: ETHRateAgent }).should.be.rejected;
       });
-      it('should successfully change rate if sender is the owner', async function () {
-          await this.crowdsale.updateRate(newRate, { from: owner }).should.be.fulfilled;
-          let newRateBC = await this.crowdsale.rate();
-          newRateBC.should.be.bignumber.equal(newRate);
+          
+      it('should reject request if sender is not the ETHRateAgents/owner', async function () {
+        await this.crowdsale.updateRate(newRate, { from: otherInvestor }).should.be.rejected;
+      });
+      it('should successfully change rate if sender is owner', async function () {
+        await this.crowdsale.updateRate(newRate, { from: owner }).should.be.fulfilled;
+        let newRateBC = await this.crowdsale.rate();
+        newRateBC.should.be.bignumber.equal(newRate);
+      });
+      it('should successfully change rate if sender is ETHRateAgents', async function () {
+        await this.crowdsale.setETHRateAgent(ETHRateAgent, true, { from: owner }).should.be.fulfilled;
+        await this.crowdsale.updateRate(newRate, { from: ETHRateAgent }).should.be.fulfilled;
+        let newRateBC = await this.crowdsale.rate();
+        newRateBC.should.be.bignumber.equal(newRate);
       });
     });
+
+    
+    describe('add purchase from other source', function () {
+      it('should only allow owner to set allowedAgentsForOtherSource', async function () {
+        await this.crowdsale.setAllowedAgentsForOtherSource(ETHRateAgent, true, { from: owner }).should.be.fulfilled;
+        await this.crowdsale.setAllowedAgentsForOtherSource(ETHRateAgent, true, { from: ETHRateAgent }).should.be.rejected;
+      });
+          
+      it('should reject request if sender is not the allowedAgentsForOtherSource/owner', async function () {
+        await this.crowdsale.addPurchaseFromOtherSource(whitelistedInvestor, "BTC", lessThanTokenCap, lessThanTokenCap, { from: ETHRateAgent }).should.be.rejected;
+      });
+      it('should successfully addpurchasefromothersource if sender is allowedAgentsForOtherSource/owner', async function () {
+        await this.crowdsale.setAllowedAgentsForOtherSource(ETHRateAgent, true, { from: owner }).should.be.fulfilled;
+        await this.crowdsale.addPurchaseFromOtherSource(whitelistedInvestor, "BTC", lessThanTokenCap, lessThanTokenCap, { from: owner }).should.be.fulfilled;
+        await this.crowdsale.addPurchaseFromOtherSource(whitelistedInvestor, "BTC", lessThanTokenCap, lessThanTokenCap, { from: ETHRateAgent }).should.be.fulfilled;
+      });
+      it('should reject request if token is more than tokencap', async function () {
+        await this.crowdsale.addPurchaseFromOtherSource(whitelistedInvestor, "BTC", moreThanTokenCap, moreThanTokenCap, { from: owner }).should.be.rejected;
+        await this.crowdsale.addPurchaseFromOtherSource(whitelistedInvestor, "BTC", lessThanTokenCap, lessThanTokenCap, { from: owner }).should.be.fulfilled;
+      });
+      it('should reject request if beneficiary is not whitelisted', async function () {
+        await this.crowdsale.addPurchaseFromOtherSource(otherInvestor, "BTC", lessThanTokenCap, lessThanTokenCap, { from: owner }).should.be.rejected;
+        await this.crowdsale.addPurchaseFromOtherSource(otherInvestor, "BTC", lessThanTokenCap, lessThanTokenCap, { from: owner }).should.be.rejected;
+      });
+    });
+
 
     describe('token delivery', function () {
       it('should not immediately assign tokens to beneficiary', async function () {

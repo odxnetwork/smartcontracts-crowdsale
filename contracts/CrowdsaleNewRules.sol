@@ -37,7 +37,7 @@ contract CrowdsaleNewRules is CappedCrowdsale, TimedCrowdsale, WhitelistedCrowds
   event DeliverTokens(address indexed sender, address indexed beneficiary, uint256 value);
   event UpdateRate(address indexed sender, uint256 rate);
   
-  event AllocateTokensFromOtherSource(string indexed coinType, address indexed beneficiary, uint256 value, uint256 amount);
+  event AllocateTokensFromOtherSource(string coinType, address indexed beneficiary, uint256 value, uint256 amount);
 
 
   /**
