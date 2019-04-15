@@ -96,8 +96,7 @@ contract PrivateSaleRules is Ownable {
     }
   }
   
-  
-  function releaseLockedTokens(address _beneficiary) onlyOwner public {
+  function releaseLockedTokens(address _beneficiary) public {
     for (uint i=0; i<lockupTimes.length; i++) {
         uint256 lockupTime = lockupTimes[i];
         if (lockupTime < now){
